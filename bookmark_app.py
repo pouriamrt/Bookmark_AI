@@ -69,7 +69,8 @@ all_bookmarks = compare_lists(all_bookmarks0, all_bookmarks)
 flag = False
 for i, bookmark in tqdm(enumerate(all_bookmarks)):
     if 'description' not in bookmark:
-        response = llm.invoke(f"Tell me a short description for this url content: {bookmark["url"]} and if you were unable to access or scrape content, generate a description based on its name f{bookmark["name"]} and do not say anything about not being able to access.")
+        prompt = f"Tell me a short description for this url content: {bookmark['url']} and if you were unable to access or scrape content, generate a description based on its name {bookmark['name']} and do not say anything about not being able to access."
+        response = llm.invoke(prompt)
         all_bookmarks[i]['description'] = response.content
         flag = True
 
