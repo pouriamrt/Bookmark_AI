@@ -95,7 +95,7 @@ pip install -r requirements.txt
 3. **Run the script:**
 
 ```bash
-python bookmark_assistant.py
+python bookmark_app.py
 ```
 
 4. **The Gradio interface will launch automatically!**  
