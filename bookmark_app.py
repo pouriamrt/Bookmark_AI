@@ -13,6 +13,7 @@ import pickle
 import json
 from tqdm import tqdm
 import gradio as gr
+import os
 
 
 ###########################################################################################
@@ -60,8 +61,11 @@ for root in tqdm(["bookmark_bar", "other", "synced"]):
         all_bookmarks0.extend(extract_bookmarks(data["roots"][root]["children"]))
 
 
-with open('all_bookmarks.pkl', 'rb') as file:
-    all_bookmarks = pickle.load(file)
+if os.path.exists('all_bookmarks.pkl'):
+    with open('all_bookmarks.pkl', 'rb') as file:
+        all_bookmarks = pickle.load(file)
+else:
+    all_bookmarks = []
     
 
 all_bookmarks = compare_lists(all_bookmarks0, all_bookmarks)
