@@ -91,7 +91,7 @@ pip install -r requirements.txt
 ## 🖥️ How to Run
 
 1. **Export your Chrome bookmarks** if not already available.
-2. **Adjust the `bookmarks_path`** in the code to point to your Chrome `Bookmarks` file.
+2. The app tries to locate Chrome's bookmarks file automatically. If it can't find it, set the `BOOKMARKS_PATH` environment variable to the file's location.
 3. **Run the script:**
 
 ```bash

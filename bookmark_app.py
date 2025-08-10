@@ -14,6 +14,8 @@ import json
 from tqdm import tqdm
 import gradio as gr
 import os
+from pathlib import Path
+import platform
 
 
 ###########################################################################################
@@ -50,9 +52,44 @@ llm = ChatOpenAI(model="gpt-4o-mini")
 
 ###########################################################################################
 
-bookmarks_path = r"C:\Users\pouri\AppData\Local\Google\Chrome\User Data\Default\Bookmarks"
 
-with open(bookmarks_path, 'r', encoding="utf-8") as file:
+def get_bookmarks_path() -> Path:
+    """Locate the Chrome bookmarks file.
+
+    Uses the ``BOOKMARKS_PATH`` environment variable if set. Otherwise,
+    attempts to find the default location for the current operating system.
+    """
+
+    env_path = os.environ.get("BOOKMARKS_PATH")
+    if env_path:
+        return Path(env_path).expanduser()
+
+    system = platform.system()
+    if system == "Windows":
+        base = Path(os.environ.get("USERPROFILE", ""))
+        return base / "AppData" / "Local" / "Google" / "Chrome" / "User Data" / "Default" / "Bookmarks"
+    if system == "Darwin":
+        return (
+            Path.home()
+            / "Library"
+            / "Application Support"
+            / "Google"
+            / "Chrome"
+            / "Default"
+            / "Bookmarks"
+        )
+    # Assume Linux or other Unix-like systems
+    return Path.home() / ".config" / "google-chrome" / "Default" / "Bookmarks"
+
+
+bookmarks_path = get_bookmarks_path()
+
+if not bookmarks_path.exists():
+    raise FileNotFoundError(
+        f"Chrome bookmarks file not found at {bookmarks_path}. Set the BOOKMARKS_PATH environment variable to the correct location."
+    )
+
+with bookmarks_path.open("r", encoding="utf-8") as file:
     data = json.load(file)
 
 all_bookmarks0 = []
