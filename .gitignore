@@ -1,2 +1,5 @@
 myenv/
 .gradio/
+
+all_bookmarks.pkl
+*.faiss
