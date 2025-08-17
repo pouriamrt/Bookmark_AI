@@ -1,14 +1,9 @@
-from langchain_openai import ChatOpenAI
-from langchain import hub
-from langchain_core.tools import tool
-from langgraph.prebuilt import create_react_agent
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.documents import Document
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langgraph.graph import START, StateGraph
-from typing_extensions import List, TypedDict
-from langchain_openai import OpenAIEmbeddings
-from langchain_core.vectorstores import InMemoryVectorStore
+from langchain_core.tools import tool
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.prebuilt import create_react_agent
+from langchain_community.vectorstores import FAISS
 import pickle
 import json
 from tqdm import tqdm
@@ -48,7 +43,7 @@ def compare_lists(list1, list2):
 
 ###########################################################################################
 
-llm = ChatOpenAI(model="gpt-4o-mini")
+llm = ChatOpenAI(model="o4-mini")
 
 ###########################################################################################
 
@@ -130,8 +125,21 @@ for bookmark in tqdm(all_bookmarks):
     all_splits.append(doc)
     
 embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
-vector_store = InMemoryVectorStore(embeddings)
-_ = vector_store.add_documents(documents=all_splits)
+vector_store_path = Path("vector_store")
+
+if vector_store_path.exists():
+    vector_store = FAISS.load_local(
+        vector_store_path, embeddings, allow_dangerous_deserialization=True
+    )
+    existing_sources = {doc.metadata["source"] for doc in vector_store.docstore._dict.values()}
+    new_docs = [doc for doc in all_splits if doc.metadata["source"] not in existing_sources]
+    if new_docs:
+        vector_store.add_documents(new_docs)
+        vector_store.save_local(vector_store_path)
+else:
+    vector_store = FAISS.from_documents(all_splits, embeddings)
+    vector_store.save_local(vector_store_path)
+    
 memory = MemorySaver()
 
 @tool(response_format="content_and_artifact")
