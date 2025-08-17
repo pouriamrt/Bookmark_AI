@@ -1,7 +1,7 @@
 
 # 📚 AI-Powered Bookmark Assistant
 
-An intelligent assistant that reads your Chrome bookmarks, generates short descriptions for them, stores them in a persistent FAISS vector database, and lets you query them conversationally using **o4-mini** and **Gradio**.
+An intelligent assistant that reads your Chrome bookmarks, generates short descriptions for them, stores them in a persistent FAISS vector database, and lets you query them conversationally using **gpt-4.1** and **Gradio**.
 
 ---
 
@@ -120,7 +120,7 @@ Bot Response:
 
 - If new bookmarks are added, the assistant will automatically update and describe them.
 - Bookmark data and embeddings are stored **locally** (no cloud storage or external API data saving).
-- The project currently uses **o4-mini** and **text-embedding-3-large** models via **OpenAI** API. Make sure you have access.
+- The project currently uses **gpt-4.1** and **text-embedding-3-large** models via **OpenAI** API. Make sure you have access.
 
 ---
 
