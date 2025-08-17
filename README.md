@@ -28,7 +28,7 @@ And the assistant will retrieve the best-matching bookmarks instantly.
 ## 🛠 Features
 
 - 📥 **Bookmark Extraction:** Recursively reads and flattens Chrome's hierarchical bookmark structure.
-- ✍️ **Automatic Description Generation:** Uses **o4-mini** to generate concise, human-readable summaries for each bookmark.
+- ✍️ **Automatic Description Generation:** Uses **gpt-4.1** to generate concise, human-readable summaries for each bookmark.
 - 🗂 **Persistent Vector Search Engine:** Embeds and indexes bookmarks using **OpenAI's text-embedding-3-large** model and stores them with **FAISS** for fast semantic search.
 - 🤖 **Conversational Agent:** A ReAct-style agent using **LangGraph** to handle complex queries.
 - 🧠 **In-Memory Checkpointing:** Maintains state between interactions for a smoother chat experience.
@@ -56,7 +56,7 @@ And the assistant will retrieve the best-matching bookmarks instantly.
    Merges newly extracted bookmarks with previously saved ones to avoid duplicates.
 
 3. **Generate Descriptions:**  
-   For bookmarks without a description, sends prompts to the **o4-mini** model to generate concise summaries.
+   For bookmarks without a description, sends prompts to the **gpt-4.1** model to generate concise summaries.
 
 4. **Embed and Store:**  
    Converts bookmark content into embeddings and stores them using a **FAISS** vector database persisted to disk.
