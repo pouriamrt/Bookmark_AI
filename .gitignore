@@ -1,4 +1,6 @@
 myenv/
+.venv/
+vector_store/
 .gradio/
 
 all_bookmarks.pkl
