@@ -1,7 +1,7 @@
 
 # 📚 AI-Powered Bookmark Assistant
 
-An intelligent assistant that reads your Chrome bookmarks, generates short descriptions for them, stores them in an in-memory vector database, and lets you query them conversationally using **GPT-4o-mini** and **Gradio**. 
+An intelligent assistant that reads your Chrome bookmarks, generates short descriptions for them, stores them in a persistent FAISS vector database, and lets you query them conversationally using **o4-mini** and **Gradio**.
 
 ---
 
@@ -11,7 +11,7 @@ This project creates a smart, searchable chatbot based on your Chrome bookmarks.
 
 - Extracts all your bookmarks from Chrome.
 - Automatically generates meaningful descriptions for bookmarks using a powerful LLM.
-- Stores bookmark content and metadata in a local in-memory vector database.
+- Stores bookmark content and metadata in a local persistent FAISS vector database.
 - Retrieves relevant bookmarks based on user queries using semantic search.
 - Offers a simple and elegant chat interface built with **Gradio**.
 
@@ -28,8 +28,8 @@ And the assistant will retrieve the best-matching bookmarks instantly.
 ## 🛠 Features
 
 - 📥 **Bookmark Extraction:** Recursively reads and flattens Chrome's hierarchical bookmark structure.
-- ✍️ **Automatic Description Generation:** Uses **GPT-4o-mini** to generate concise, human-readable summaries for each bookmark.
-- 🗂 **Vector Search Engine:** Embeds and indexes bookmarks using **OpenAI's text-embedding-3-large** model for semantic search.
+- ✍️ **Automatic Description Generation:** Uses **o4-mini** to generate concise, human-readable summaries for each bookmark.
+- 🗂 **Persistent Vector Search Engine:** Embeds and indexes bookmarks using **OpenAI's text-embedding-3-large** model and stores them with **FAISS** for fast semantic search.
 - 🤖 **Conversational Agent:** A ReAct-style agent using **LangGraph** to handle complex queries.
 - 🧠 **In-Memory Checkpointing:** Maintains state between interactions for a smoother chat experience.
 - 💬 **Interactive Chat UI:** Built with **Gradio** for easy local deployment.
@@ -42,7 +42,7 @@ And the assistant will retrieve the best-matching bookmarks instantly.
 |:--------------|:--------|
 | `Bookmarks.json` | Chrome bookmarks file automatically loaded |
 | `all_bookmarks.pkl` | Pickled enriched bookmarks with descriptions |
-| `vector_store` | In-memory vector store with embedded documents |
+| `vector_store` | Persistent FAISS vector store with embedded documents |
 | `gradio_app` | Gradio-based chat interface |
 
 ---
@@ -56,10 +56,10 @@ And the assistant will retrieve the best-matching bookmarks instantly.
    Merges newly extracted bookmarks with previously saved ones to avoid duplicates.
 
 3. **Generate Descriptions:**  
-   For bookmarks without a description, sends prompts to the **GPT-4o-mini** model to generate concise summaries.
+   For bookmarks without a description, sends prompts to the **o4-mini** model to generate concise summaries.
 
 4. **Embed and Store:**  
-   Converts bookmark content into embeddings and stores them using an **InMemoryVectorStore**.
+   Converts bookmark content into embeddings and stores them using a **FAISS** vector database persisted to disk.
 
 5. **Setup Retrieval Agent:**  
    Creates a retrieval-augmented chatbot using LangGraph's prebuilt ReAct agent.
@@ -79,6 +79,7 @@ And the assistant will retrieve the best-matching bookmarks instantly.
 - `gradio`
 - `openai`
 - `typing_extensions`
+- `faiss-cpu`
 
 Install all dependencies via:
 
@@ -119,13 +120,12 @@ Bot Response:
 
 - If new bookmarks are added, the assistant will automatically update and describe them.
 - Bookmark data and embeddings are stored **locally** (no cloud storage or external API data saving).
-- The project currently uses **GPT-4o-mini** and **text-embedding-3-large** models via **OpenAI** API. Make sure you have access.
+- The project currently uses **o4-mini** and **text-embedding-3-large** models via **OpenAI** API. Make sure you have access.
 
 ---
 
 ## ⚡ Future Improvements
 
-- Save embeddings persistently to disk (instead of memory) for faster restarts.
 - Add multi-turn conversation memory.
 - Improve description generation with website scraping.
 - Support Firefox, Edge, and other browsers.
