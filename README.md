@@ -141,3 +141,22 @@ This project is open-source and available for use under the [MIT License](LICENS
 ## 🙌 Acknowledgments
 
 Thanks to the open-source community around **LangChain**, **LangGraph**, **OpenAI**, and **Gradio** for making rapid prototyping like this possible.
+
+## 📝 How to Cite
+
+If you use the **AI-Powered Bookmark Assistant** in your research, projects, or publications, please cite:
+
+**Software**
+> Mortezaagha, P. (2025). *AI-Powered Bookmark Assistant (v1.0.0)*. GitHub. https://github.com/your-username/ai-bookmark-assistant
+
+### BibTeX
+```bibtex
+@software{mortezaagha_ai_bookmark_assistant_2025,
+  author  = {Mortezaagha, Pouria},
+  title   = {AI-Powered Bookmark Assistant},
+  version = {1.0.0},
+  year    = {2025},
+  url     = {https://github.com/your-username/ai-bookmark-assistant},
+  license = {MIT},
+  note    = {Gradio + LangGraph chatbot for semantic search over Chrome bookmarks with persistent FAISS vector database}
+}
