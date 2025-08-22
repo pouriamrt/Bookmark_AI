@@ -147,7 +147,7 @@ Thanks to the open-source community around **LangChain**, **LangGraph**, **OpenA
 If you use the **AI-Powered Bookmark Assistant** in your research, projects, or publications, please cite:
 
 **Software**
-> Mortezaagha, P. (2025). *AI-Powered Bookmark Assistant (v1.0.0)*. GitHub. https://github.com/your-username/ai-bookmark-assistant
+> Mortezaagha, P. (2025). *AI-Powered Bookmark Assistant (v1.0.0)*. GitHub. https://github.com/pouriamrt/Bookmark_AI
 
 ### BibTeX
 ```bibtex
@@ -156,7 +156,7 @@ If you use the **AI-Powered Bookmark Assistant** in your research, projects, or 
   title   = {AI-Powered Bookmark Assistant},
   version = {1.0.0},
   year    = {2025},
-  url     = {https://github.com/your-username/ai-bookmark-assistant},
+  url     = {https://github.com/pouriamrt/Bookmark_AI},
   license = {MIT},
   note    = {Gradio + LangGraph chatbot for semantic search over Chrome bookmarks with persistent FAISS vector database}
 }
