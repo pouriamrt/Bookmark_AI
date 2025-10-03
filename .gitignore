@@ -5,3 +5,4 @@ vector_store/
 
 all_bookmarks.pkl
 *.faiss
+*.pkl
