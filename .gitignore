@@ -3,6 +3,5 @@ myenv/
 vector_store/
 .gradio/
 
-all_bookmarks.pkl
 *.faiss
 *.pkl
