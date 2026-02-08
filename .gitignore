@@ -5,3 +5,6 @@ vector_store/
 
 *.faiss
 *.pkl
+
+.env
+all_bookmarks.json
