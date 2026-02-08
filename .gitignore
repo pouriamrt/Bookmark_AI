@@ -2,6 +2,7 @@ myenv/
 .venv/
 vector_store/
 .gradio/
+__pycache__/
 
 *.faiss
 *.pkl
