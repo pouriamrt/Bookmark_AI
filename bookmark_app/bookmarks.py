@@ -2,7 +2,6 @@
 
 import json
 import logging
-import pickle
 from pathlib import Path
 
 from .config import get_bookmarks_path
@@ -50,30 +49,17 @@ def load_chrome_bookmarks(path: Path | None = None) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
-# Cache (JSON with legacy pickle migration)
+# Cache
 # ---------------------------------------------------------------------------
 
 def load_cache(path: str) -> list[dict]:
-    """Load the bookmark cache from *path* (JSON).
-
-    If *path* does not exist but a legacy ``all_bookmarks.pkl`` does, migrate
-    it to JSON automatically.
-    """
+    """Load the bookmark cache from *path* (JSON)."""
     json_path = Path(path)
 
     if json_path.exists():
         logger.info("Loading bookmark cache from %s", json_path)
         with json_path.open("r", encoding="utf-8") as f:
             return json.load(f)
-
-    # Legacy pickle migration
-    pkl_path = Path("all_bookmarks.pkl")
-    if pkl_path.exists():
-        logger.info("Migrating legacy pickle cache → %s", json_path)
-        with pkl_path.open("rb") as f:
-            data = pickle.load(f)  # noqa: S301
-        save_cache(data, path)
-        return data
 
     logger.info("No existing bookmark cache found; starting fresh")
     return []

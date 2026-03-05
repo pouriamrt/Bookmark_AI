@@ -6,15 +6,9 @@ import gradio as gr
 from gradio.themes.utils import colors
 from langchain_core.messages import AIMessageChunk
 
+from . import config
 from .agent import create_agent, get_llm, set_retrieval_k
 from .bookmarks import load_cache, load_chrome_bookmarks, merge_bookmarks, save_cache
-from .config import (
-    BOOKMARKS_CACHE_PATH,
-    RETRIEVAL_K,
-    load_env,
-    setup_logging,
-    validate_config,
-)
 from .descriptions import generate_all_descriptions_sync
 from .vectorstore import bookmarks_to_documents, load_or_create_vectorstore
 
@@ -51,8 +45,8 @@ def main() -> None:
     """Full initialization pipeline -> launch Gradio UI."""
 
     # -- 1. Configuration -------------------------------------------------
-    load_env()
-    setup_logging()
+    config.load_env()
+    config.setup_logging()
 
     # Silence noisy third-party loggers
     logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -60,16 +54,19 @@ def main() -> None:
     logging.getLogger("openai").setLevel(logging.WARNING)
 
     logger.info("Starting Bookmark AI ...")
-    validate_config()
+    config.validate_config()
 
     # -- 2. Bookmarks -----------------------------------------------------
     fresh_bookmarks = load_chrome_bookmarks()
-    cached_bookmarks = load_cache(BOOKMARKS_CACHE_PATH)
+    cached_bookmarks = load_cache(config.BOOKMARKS_CACHE_PATH)
     bookmarks = merge_bookmarks(fresh_bookmarks, cached_bookmarks)
 
     # -- 3. Descriptions --------------------------------------------------
-    bookmarks = generate_all_descriptions_sync(bookmarks)
-    save_cache(bookmarks, BOOKMARKS_CACHE_PATH)
+    def _save_progress():
+        save_cache(bookmarks, config.BOOKMARKS_CACHE_PATH)
+
+    bookmarks = generate_all_descriptions_sync(bookmarks, on_progress=_save_progress)
+    save_cache(bookmarks, config.BOOKMARKS_CACHE_PATH)
 
     # -- 4. Vector store --------------------------------------------------
     documents = bookmarks_to_documents(bookmarks)
@@ -99,7 +96,7 @@ def main() -> None:
     k_slider = gr.Slider(
         minimum=1,
         maximum=30,
-        value=RETRIEVAL_K,
+        value=config.RETRIEVAL_K,
         step=1,
         label="Number of results to retrieve",
     )

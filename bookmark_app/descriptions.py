@@ -2,10 +2,11 @@
 
 import asyncio
 import logging
+from typing import Callable
 
 from langchain_openai import ChatOpenAI
 
-from .config import LLM_MODEL
+from . import config
 
 logger = logging.getLogger(__name__)
 
@@ -22,11 +23,12 @@ PROMPT_TEMPLATE = (
 
 
 class _ProgressCounter:
-    """Simple atomic counter for tracking completed tasks."""
+    """Simple counter for tracking completed async tasks."""
 
-    def __init__(self, total: int):
+    def __init__(self, total: int, on_progress: Callable[[], None] | None = None):
         self.completed = 0
         self.total = total
+        self._on_progress = on_progress
 
     def increment(self) -> None:
         self.completed += 1
@@ -34,6 +36,8 @@ class _ProgressCounter:
             logger.info(
                 "Descriptions: %d/%d complete", self.completed, self.total,
             )
+            if self._on_progress:
+                self._on_progress()
 
 
 async def _generate_one(
@@ -59,7 +63,11 @@ async def _generate_one(
             progress.increment()
 
 
-async def _generate_all(bookmarks: list[dict], llm: ChatOpenAI) -> list[dict]:
+async def _generate_all(
+    bookmarks: list[dict],
+    llm: ChatOpenAI,
+    on_progress: Callable[[], None] | None = None,
+) -> list[dict]:
     """Generate missing descriptions concurrently."""
     semaphore = asyncio.Semaphore(MAX_CONCURRENT)
     indices: list[int] = [
@@ -72,7 +80,7 @@ async def _generate_all(bookmarks: list[dict], llm: ChatOpenAI) -> list[dict]:
 
     total = len(indices)
     logger.info("Generating descriptions for %d bookmarks ...", total)
-    progress = _ProgressCounter(total)
+    progress = _ProgressCounter(total, on_progress)
 
     tasks = [
         asyncio.create_task(
@@ -97,12 +105,14 @@ async def _generate_all(bookmarks: list[dict], llm: ChatOpenAI) -> list[dict]:
 def generate_all_descriptions_sync(
     bookmarks: list[dict],
     llm: ChatOpenAI | None = None,
+    on_progress: Callable[[], None] | None = None,
 ) -> list[dict]:
     """Synchronous wrapper -- generates missing descriptions in parallel.
 
     If *llm* is not provided, a new ``ChatOpenAI`` instance is created using
-    the configured model.
+    the configured model.  *on_progress* is called every 10 completions so the
+    caller can persist intermediate results.
     """
     if llm is None:
-        llm = ChatOpenAI(model=LLM_MODEL)
-    return asyncio.run(_generate_all(bookmarks, llm))
+        llm = ChatOpenAI(model=config.LLM_MODEL)
+    return asyncio.run(_generate_all(bookmarks, llm, on_progress))

@@ -8,7 +8,7 @@ from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 
-from .config import LLM_MODEL, RETRIEVAL_K
+from . import config
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,12 @@ context.
 """
 
 # Mutable default so the UI slider can update it at runtime.
-_retrieval_k: dict[str, int] = {"value": RETRIEVAL_K}
+_retrieval_k: dict[str, int] = {}
+
+
+def _get_retrieval_k() -> int:
+    """Return the current retrieval k, defaulting to the config value."""
+    return _retrieval_k.get("value", config.RETRIEVAL_K)
 
 
 def set_retrieval_k(k: int) -> None:
@@ -43,7 +48,7 @@ def create_retrieve_tool(vector_store: FAISS):
     def retrieve(query: str):
         """Retrieve bookmarks related to a query."""
         retrieved_docs = vector_store.similarity_search(
-            query, k=_retrieval_k["value"],
+            query, k=_get_retrieval_k(),
         )
         serialized = "\n\n".join(
             f"Source: {doc.metadata}\nContent: {doc.page_content}"
@@ -56,7 +61,7 @@ def create_retrieve_tool(vector_store: FAISS):
 
 def get_llm() -> ChatOpenAI:
     """Create a streaming ``ChatOpenAI`` instance."""
-    return ChatOpenAI(model=LLM_MODEL, streaming=True)
+    return ChatOpenAI(model=config.LLM_MODEL, streaming=True)
 
 
 def create_agent(llm: ChatOpenAI, vector_store: FAISS):
@@ -69,5 +74,5 @@ def create_agent(llm: ChatOpenAI, vector_store: FAISS):
         checkpointer=memory,
         prompt=SYSTEM_PROMPT,
     )
-    logger.info("Agent created with model=%s, k=%d", LLM_MODEL, _retrieval_k["value"])
+    logger.info("Agent created with model=%s, k=%d", config.LLM_MODEL, _get_retrieval_k())
     return agent

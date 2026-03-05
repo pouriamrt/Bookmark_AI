@@ -6,6 +6,9 @@ __pycache__/
 
 *.faiss
 *.pkl
+indexed_urls.json
 
 .env
 all_bookmarks.json
+.claude/
+
