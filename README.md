@@ -1,5 +1,6 @@
 
 # 📚 AI-Powered Bookmark Assistant
+[![DOI](https://zenodo.org/badge/973468967.svg)](https://doi.org/10.5281/zenodo.19142306)
 
 An intelligent assistant that reads your Chrome bookmarks, generates short descriptions for them, stores them in a persistent FAISS vector database, and lets you query them conversationally using **gpt-4.1** and a streaming **Gradio** chat UI.
 
