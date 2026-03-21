@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 
+from langchain_community.vectorstores import FAISS
 from mcp.server.fastmcp import Context, FastMCP
 
 from . import config
@@ -24,14 +26,43 @@ from .vectorstore import (
 
 logger = logging.getLogger(__name__)
 
+MAX_LIST_LIMIT = 100
+
 
 @dataclass
 class AppContext:
     """Shared state initialized at startup."""
 
     bookmarks: list[dict] = field(default_factory=list)
-    vector_store: object | None = None  # FAISS instance
+    vector_store: FAISS | None = None
     folders: list[str] = field(default_factory=list)
+
+
+def _build_app_state() -> tuple[list[dict], FAISS, list[str]]:
+    """Load bookmarks, generate descriptions, build vector store.
+
+    Extracted so both the lifespan and refresh_bookmarks share one pipeline.
+    Saves cache incrementally every 10 descriptions via the on_progress callback.
+    """
+    fresh = load_chrome_bookmarks()
+    cached = load_cache(config.BOOKMARKS_CACHE_PATH)
+    bookmarks = merge_bookmarks(fresh, cached)
+
+    def _save_progress():
+        save_cache(bookmarks, config.BOOKMARKS_CACHE_PATH)
+
+    bookmarks = generate_all_descriptions_sync(
+        bookmarks, on_progress=_save_progress,
+    )
+    save_cache(bookmarks, config.BOOKMARKS_CACHE_PATH)
+
+    documents = bookmarks_to_documents(bookmarks)
+    vector_store = load_or_create_vectorstore(documents)
+
+    folders = sorted(
+        {bm.get("folder", "") for bm in bookmarks if bm.get("folder")}
+    )
+    return bookmarks, vector_store, folders
 
 
 @asynccontextmanager
@@ -45,26 +76,9 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
 
     config.validate_config()
 
-    # Load and enrich bookmarks
-    fresh = load_chrome_bookmarks()
-    cached = load_cache(config.BOOKMARKS_CACHE_PATH)
-    bookmarks = merge_bookmarks(fresh, cached)
-
-    def _save_progress():
-        save_cache(bookmarks, config.BOOKMARKS_CACHE_PATH)
-
-    bookmarks = generate_all_descriptions_sync(
-        bookmarks, on_progress=_save_progress,
-    )
-    save_cache(bookmarks, config.BOOKMARKS_CACHE_PATH)
-
-    # Build vector store
-    documents = bookmarks_to_documents(bookmarks)
-    vector_store = load_or_create_vectorstore(documents)
-
-    # Extract unique folders
-    folders = sorted(
-        {bm.get("folder", "") for bm in bookmarks if bm.get("folder")}
+    # asyncio.to_thread avoids "asyncio.run() inside running loop" crash
+    bookmarks, vector_store, folders = await asyncio.to_thread(
+        _build_app_state,
     )
 
     logger.info(
@@ -118,6 +132,7 @@ def _list_bookmarks_logic(
     limit: int = 20,
 ) -> str:
     """List bookmarks with optional filters (pure logic)."""
+    limit = max(1, min(MAX_LIST_LIMIT, limit))
     results = app.bookmarks
     if folder:
         results = [
@@ -196,7 +211,7 @@ def list_bookmarks(
     Args:
         folder: Filter by folder path (substring match, e.g. "/Tools")
         keyword: Filter by name or description keyword (case-insensitive)
-        limit: Maximum number of results (default 20)
+        limit: Maximum number of results (1-100, default 20)
     """
     app: AppContext = ctx.request_context.lifespan_context
     return _list_bookmarks_logic(app, folder, keyword, limit)
@@ -213,36 +228,24 @@ def get_bookmark_stats(ctx: Context = None) -> str:
 
 
 @mcp.tool()
-def refresh_bookmarks(ctx: Context = None) -> str:
+async def refresh_bookmarks(ctx: Context = None) -> str:
     """Re-extract bookmarks from Chrome and update the vector store.
 
     Call this after adding or removing Chrome bookmarks to sync the MCP server.
     """
     app: AppContext = ctx.request_context.lifespan_context
 
-    fresh = load_chrome_bookmarks()
-    cached = load_cache(config.BOOKMARKS_CACHE_PATH)
-    bookmarks = merge_bookmarks(fresh, cached)
-
-    def _save_progress():
-        save_cache(bookmarks, config.BOOKMARKS_CACHE_PATH)
-
-    bookmarks = generate_all_descriptions_sync(
-        bookmarks, on_progress=_save_progress,
+    # Run in thread to avoid asyncio.run() crash inside running loop
+    bookmarks, vector_store, folders = await asyncio.to_thread(
+        _build_app_state,
     )
-    save_cache(bookmarks, config.BOOKMARKS_CACHE_PATH)
-
-    documents = bookmarks_to_documents(bookmarks)
-    vector_store = load_or_create_vectorstore(documents)
 
     # Update shared state
     app.bookmarks = bookmarks
     app.vector_store = vector_store
-    app.folders = sorted(
-        {bm.get("folder", "") for bm in bookmarks if bm.get("folder")}
-    )
+    app.folders = folders
 
-    return f"Refreshed: {len(bookmarks)} bookmarks across {len(app.folders)} folders."
+    return f"Refreshed: {len(bookmarks)} bookmarks across {len(folders)} folders."
 
 
 # -- MCP Resources ---------------------------------------------------------
@@ -263,6 +266,7 @@ def list_folders(ctx: Context = None) -> str:
 @mcp.prompt()
 def find_bookmarks(topic: str) -> str:
     """Generate a prompt to search bookmarks about a topic."""
+    topic = topic.strip()[:200]
     return (
         f"Search the user's Chrome bookmarks for anything related to: {topic}\n\n"
         "Use the search_bookmarks tool, then present results as a numbered list "

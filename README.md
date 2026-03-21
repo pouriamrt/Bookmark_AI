@@ -35,7 +35,13 @@ And the assistant will retrieve the best-matching bookmarks instantly.
 - 🧠 **In-Memory Checkpointing:** Maintains state between interactions for a smoother chat experience.
 - 💬 **Streaming Chat UI:** Built with **Gradio 5** featuring a themed interface, example queries, and adjustable settings.
 - ⚙️ **Configurable:** All settings (model, retrieval count, paths) configurable via `.env` file.
-- 🔄 **Auto-Migration:** Automatically migrates legacy pickle caches to JSON format.
+- 🔌 **MCP Server:** Expose bookmark tools to any MCP-compatible AI client (Claude Code, Cursor, etc.) via stdio transport.
+
+---
+
+## 🏗️ Architecture
+
+![Architecture Diagram](bookmark-ai-architecture.png)
 
 ---
 
@@ -48,17 +54,21 @@ Bookmark_AI/
 ├── CLAUDE.md                 # Claude Code instructions
 ├── README.md
 ├── LICENSE
-├── run.py                    # Entry point (python run.py)
+├── run.py                    # Entry point — Gradio web UI
+├── run_mcp.py                # Entry point — MCP server (stdio)
 ├── requirements.txt          # Direct dependencies only
 ├── bookmark_app/
 │   ├── __init__.py           # Package marker + version
 │   ├── __main__.py           # python -m bookmark_app support
 │   ├── config.py             # .env loading, settings, path detection, logging
-│   ├── bookmarks.py          # Chrome extraction, JSON cache, pickle migration
+│   ├── bookmarks.py          # Chrome extraction, JSON cache
 │   ├── descriptions.py       # Async LLM description generation with batching
 │   ├── vectorstore.py        # FAISS vector store management
 │   ├── agent.py              # LangGraph ReAct agent with system prompt
-│   └── ui.py                 # Gradio 5 UI with streaming + main() orchestrator
+│   ├── ui.py                 # Gradio 5 UI with streaming + main() orchestrator
+│   └── mcp_server.py         # MCP server: tools, resources, prompt
+├── tests/
+│   └── test_mcp_server.py    # Unit tests for MCP logic functions
 ```
 
 | File / Folder | Purpose |
@@ -102,6 +112,7 @@ Bookmark_AI/
 - `faiss-cpu`
 - `gradio`
 - `python-dotenv`
+- `mcp[cli]` — Model Context Protocol server SDK
 
 Install all dependencies via:
 
@@ -173,11 +184,54 @@ Bot Response:
 
 ---
 
+## 🔌 MCP Server
+
+The project includes an **MCP (Model Context Protocol) server** that exposes bookmark operations to any MCP-compatible AI client — Claude Code, Cursor, Windsurf, and more.
+
+### Available Tools
+
+| Tool | Description |
+|:-----|:------------|
+| `search_bookmarks(query, k)` | Semantic similarity search over bookmarks |
+| `list_bookmarks(folder, keyword, limit)` | Filter bookmarks by folder path or keyword |
+| `get_bookmark_stats()` | Summary statistics — total count, folders, coverage |
+| `refresh_bookmarks()` | Re-extract from Chrome and rebuild the vector store |
+
+### Resources & Prompts
+
+- **`bookmarks://folders`** — List of all bookmark folder paths
+- **`find_bookmarks(topic)`** — Pre-built prompt template for bookmark search
+
+### Running the MCP Server
+
+```bash
+python run_mcp.py
+```
+
+### Connecting from Claude Code
+
+Add to your MCP configuration (e.g. `~/.claude.json` or project `.mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "bookmark-ai": {
+      "command": "python",
+      "args": ["run_mcp.py"],
+      "cwd": "/path/to/Bookmark_AI"
+    }
+  }
+}
+```
+
+Once connected, any MCP client can semantically search your bookmarks, browse by folder, view statistics, and refresh the index — all without opening the Gradio UI.
+
+---
+
 ## 📢 Notes
 
 - If new bookmarks are added to Chrome, the assistant will automatically detect and describe them on the next run.
 - Bookmark data and embeddings are stored **locally** — no cloud storage or external data saving.
-- Legacy `all_bookmarks.pkl` files are automatically migrated to JSON format on first run.
 - The project uses **gpt-4.1** and **text-embedding-3-large** models via the **OpenAI** API. Make sure you have access.
 
 ---

@@ -5,3 +5,4 @@ langchain-community
 langchain-openai
 langgraph
 python-dotenv
+mcp[cli]

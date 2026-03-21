@@ -16,6 +16,9 @@ pip install -r requirements.txt
 python -m bookmark_app
 # or
 python run.py
+
+# Run the MCP server (stdio transport, for Claude Code / Cursor / etc.)
+python run_mcp.py
 ```
 
 ## Environment
@@ -37,7 +40,8 @@ bookmark_app/
 ├── descriptions.py   # Async LLM description generation with batching
 ├── vectorstore.py    # FAISS vector store management
 ├── agent.py          # LangGraph ReAct agent with system prompt
-└── ui.py             # Gradio 5 UI with streaming + main() orchestrator
+├── ui.py             # Gradio 5 UI with streaming + main() orchestrator
+└── mcp_server.py     # MCP server: tools, resources, prompt for AI clients
 ```
 
 ### Pipeline (executed by `ui.main()`):
@@ -63,3 +67,36 @@ bookmark_app/
 - **FAISS (faiss-cpu)** — Local vector similarity search
 - **Gradio** — Streaming chat web UI with theming
 - **python-dotenv** — Environment variable management
+- **MCP (mcp[cli])** — Model Context Protocol server SDK
+
+## MCP Server
+
+The project includes an MCP server (`bookmark_app/mcp_server.py`) that exposes bookmark operations to any MCP-compatible AI client (Claude Code, Cursor, etc.).
+
+### Tools
+- **search_bookmarks(query, k=10)** — Semantic similarity search over bookmarks
+- **list_bookmarks(folder, keyword, limit=20)** — Filter bookmarks by folder/keyword
+- **get_bookmark_stats()** — Summary statistics (counts, folders, coverage)
+- **refresh_bookmarks()** — Re-extract from Chrome and rebuild the vector store
+
+### Resources
+- **bookmarks://folders** — List of all bookmark folder paths
+
+### Prompts
+- **find_bookmarks(topic)** — Pre-built prompt template for bookmark search
+
+### Usage with Claude Code
+
+Add to your MCP config (e.g. `~/.claude.json` or project `.mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "bookmark-ai": {
+      "command": "python",
+      "args": ["run_mcp.py"],
+      "cwd": "/path/to/Bookmark_AI"
+    }
+  }
+}
+```
